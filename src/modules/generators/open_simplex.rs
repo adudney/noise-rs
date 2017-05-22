@@ -895,46 +895,34 @@ impl<T: Float> NoiseModule<Point4<T>> for OpenSimplex {
         if region_sum <= one {
             // We're inside the pentachoron (4-Simplex) at (0, 0, 0, 0)
 
+            let t0 = squish_constant;
+            let t1 = one + squish_constant;
+
             // Contribution at (0, 0, 0, 0)
-            value = value + gradient(&self.perm_table, stretched_floor, pos0);
+            vertex = math::add4(stretched_floor, [zero, zero, zero, zero]);
+            dpos = math::sub4(pos0, [zero, zero, zero, zero]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 0, 0, 0)
-            let pos1;
-            {
-                let vertex = math::add4(stretched_floor, [one, zero, zero, zero]);
-                pos1 = math::sub4(pos0,
-                                  [one + squish_constant,
-                                   squish_constant,
-                                   squish_constant,
-                                   squish_constant]);
-                value = value + gradient(&self.perm_table, vertex, pos1);
-            }
+            vertex = math::add4(stretched_floor, [one, zero, zero, zero]);
+            dpos = math::sub4(pos0, [t1, t0, t0, t0]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 0, 0)
-            let pos2;
-            {
-                let vertex = math::add4(stretched_floor, [zero, one, zero, zero]);
-                pos2 = [pos1[0] + one, pos1[1] - one, pos1[2], pos1[3]];
-                value = value + gradient(&self.perm_table, vertex, pos2);
-            }
+            vertex = math::add4(stretched_floor, [zero, one, zero, zero]);
+            dpos = math::sub4(pos0, [t0, t1, t0, t0]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 0, 1, 0)
-            let pos3;
-            {
-                let vertex = math::add4(stretched_floor, [zero, zero, one, zero]);
-                pos3 = [pos2[0], pos1[1], pos1[2] - one, pos1[3]];
-                value = value + gradient(&self.perm_table, vertex, pos3);
-            }
+            vertex = math::add4(stretched_floor, [zero, zero, one, zero]);
+            dpos = math::sub4(pos0, [t0, t0, t1, t0]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 0, 0, 1)
-            let pos4;
-            {
-                let vertex = math::add4(stretched_floor, [zero, zero, zero, one]);
-                pos4 = [pos2[0], pos1[1], pos1[2], pos1[3] - one];
-                value = value + gradient(&self.perm_table, vertex, pos4);
-            }
+            vertex = math::add4(stretched_floor, [zero, zero, zero, one]);
+            dpos = math::sub4(pos0, [t0, t0, t0, t1]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
-            // Summary:
             // (0, 0, 0, 0) is one of the two closest points
             // Other closest point determines ext0, ext1, and ext2:
             // (1, 0, 0, 0) => ext0 = (1, -1, 0, 0), ext1 = (1, 0, -1, 0), ext2 = (1, 0, 0, -1)
@@ -943,53 +931,34 @@ impl<T: Float> NoiseModule<Point4<T>> for OpenSimplex {
             // (0, 0, 0, 1) => ext0 = (-1, 0, 0, 1), ext1 = (0, -1, 0, 1), ext2 = (0, 0, -1, 1)
         } else if region_sum >= three {
             // We're inside the pentachoron (4-Simplex) at (1, 1, 1, 1)
-            let squish_constant_3 = three * squish_constant;
+            let t0 = squish_constant + squish_constant + squish_constant;
+            let t1 = one + t0;
+            let t2 = t1 + squish_constant;
 
             // Contribution at (1, 1, 1, 0)
-            let pos4;
-            {
-                let vertex = math::add4(stretched_floor, [one, one, one, zero]);
-                pos4 = math::sub4(pos0,
-                                  [one + squish_constant_3,
-                                   one + squish_constant_3,
-                                   one + squish_constant_3,
-                                   squish_constant_3]);
-                value = value + gradient(&self.perm_table, vertex, pos4);
-            }
+            vertex = math::add4(stretched_floor, [one, one, one, zero]);
+            dpos = math::sub4(pos0, [t1, t1, t1, t0]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 1, 0, 1)
-            let pos3;
-            {
-                let vertex = math::add4(stretched_floor, [one, one, zero, one]);
-                pos3 = [pos4[0], pos4[1], pos4[2] + one, pos4[3] - one];
-                value = value + gradient(&self.perm_table, vertex, pos3);
-            }
+            vertex = math::add4(stretched_floor, [one, one, zero, one]);
+            dpos = math::sub4(pos0, [t1, t1, t0, t1]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 0, 1, 1)
-            let pos2;
-            {
-                let vertex = math::add4(stretched_floor, [one, zero, one, one]);
-                pos2 = [pos4[0], pos4[1] + one, pos4[2], pos3[3]];
-                value = value + gradient(&self.perm_table, vertex, pos2);
-            }
+            vertex = math::add4(stretched_floor, [one, zero, one, one]);
+            dpos = math::sub4(pos0, [t1, t0, t1, t1]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 1, 1)
-            let pos1;
-            {
-                let vertex = math::add4(stretched_floor, [zero, one, one, one]);
-                pos1 = [pos0[0] - squish_constant_3, pos4[1], pos4[2], pos3[3]];
-                value = value + gradient(&self.perm_table, vertex, pos1);
-            }
+            vertex = math::add4(stretched_floor, [zero, one, one, one]);
+            dpos = math::sub4(pos0, [t0, t1, t1, t1]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 1, 1, 1)
-            {
-                let vertex = math::add4(stretched_floor, [one, one, one, one]);
-                pos0[0] = pos4[0] - squish_constant;
-                pos0[1] = pos4[1] - squish_constant;
-                pos0[2] = pos4[2] - squish_constant;
-                pos0[3] = pos3[3] - squish_constant;
-                value = value + gradient(&self.perm_table, vertex, pos0);
-            }
+            vertex = math::add4(stretched_floor, [one, one, one, one]);
+            dpos = math::sub4(pos0, [t2, t2, t2, t2]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
         } else if region_sum <= two {
             // We're inside the first dispentachoron (Rectified 4-Simplex)
 
