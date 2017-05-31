@@ -73,10 +73,10 @@ impl<T: Float> NoiseModule<Point2<T>> for OpenSimplex {
                               pos: math::Point2<T>)
                               -> T {
             let zero = T::zero();
-            let attn = math::cast::<_, T>(2.0_f64) - math::dot2(pos, pos);
+            let attn = math::cast::<_, T>(2.0) - math::dot2(pos, pos);
             if attn > zero {
-                let index = perm_table.get2::<isize>(vertex);
-                let vec = gradient::get2::<T>(index);
+                let index = perm_table.get2(vertex);
+                let vec = gradient::get2(index);
                 math::pow4(attn) * math::dot2(pos, vec)
             } else {
                 zero
@@ -227,14 +227,14 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
     fn get(&self, point: Point3<T>) -> T {
         #[inline(always)]
         fn gradient<T: Float>(perm_table: &PermutationTable,
-                              vertex: math::Point3<T>,
+                              vertex: math::Point3<isize>,
                               pos: math::Point3<T>)
                               -> T {
             let zero = T::zero();
-            let attn = math::cast::<_, T>(2.0_f64) - math::dot3(pos, pos);
+            let attn = math::cast::<_, T>(2.0) - math::dot3(pos, pos);
             if attn > zero {
-                let index = perm_table.get3::<isize>(math::cast3::<_, isize>(vertex));
-                let vec = gradient::get3::<T>(index);
+                let index = perm_table.get3(vertex);
+                let vec = gradient::get3(index);
                 math::pow4(attn) * math::dot3(pos, vec)
             } else {
                 zero
@@ -255,6 +255,7 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
         // Floor to get simplectic honeycomb coordinates of rhombohedron
         // (stretched cube) super-cell origin.
         let stretched_floor = math::map3(stretched, Float::floor);
+        let stretched_floor_i = math::cast3::<_, isize>(stretched_floor);
 
         // Skew out to get actual coordinates of rhombohedron origin. We'll need
         // these later.
@@ -275,9 +276,9 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
         let mut vertex;
         let mut dpos;
 
-        let mut ext0_vertex = stretched_floor;
+        let mut ext0_vertex = stretched_floor_i;
         let mut ext0_dpos = pos0;
-        let mut ext1_vertex = stretched_floor;
+        let mut ext1_vertex = stretched_floor_i;
         let mut ext1_dpos = pos0;
 
         if region_sum <= one {
@@ -286,22 +287,22 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
             let t1 = squish_constant + one;
 
             // Contribution at (0, 0, 0)
-            vertex = math::add3(stretched_floor, [zero, zero, zero]);
+            vertex = math::add3(stretched_floor_i, [0, 0, 0]);
             dpos = math::sub3(pos0, [zero, zero, zero]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 0, 0)
-            vertex = math::add3(stretched_floor, [one, zero, zero]);
+            vertex = math::add3(stretched_floor_i, [1, 0, 0]);
             dpos = math::sub3(pos0, [t1, t0, t0]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 0)
-            vertex = math::add3(stretched_floor, [zero, one, zero]);
+            vertex = math::add3(stretched_floor_i, [0, 1, 0]);
             dpos = math::sub3(pos0, [t0, t1, t0]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 0, 1)
-            vertex = math::add3(stretched_floor, [zero, zero, one]);
+            vertex = math::add3(stretched_floor_i, [0, 0, 1]);
             dpos = math::sub3(pos0, [t0, t0, t1]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
@@ -333,12 +334,12 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
 
                 if c_point & 0x01 == 0 {
                     // c_point is either (0, 1, 0) or (0, 0, 1)
-                    ext0_vertex[0] = ext0_vertex[0] - one;
+                    ext0_vertex[0] = ext0_vertex[0] - 1;
                     ext0_dpos[0] = ext0_dpos[0] + one;
                 } else {
                     // c_point is (1, 0, 0)
-                    ext0_vertex[0] = ext0_vertex[0] + one;
-                    ext1_vertex[0] = ext1_vertex[0] + one;
+                    ext0_vertex[0] = ext0_vertex[0] + 1;
+                    ext1_vertex[0] = ext1_vertex[0] + 1;
                     ext0_dpos[0] = ext0_dpos[0] - one;
                     ext1_dpos[0] = ext1_dpos[0] - one;
                 }
@@ -347,29 +348,29 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
                     // c_point is either (1, 0, 0) or (0, 0, 1)
                     if c_point & 0x01 == 0 {
                         // c_point is (0, 0, 1)
-                        ext1_vertex[1] = ext1_vertex[1] - one;
+                        ext1_vertex[1] = ext1_vertex[1] - 1;
                         ext1_dpos[1] = ext1_dpos[1] + one;
                     } else {
                         // c_point is (1, 0, 0)
-                        ext0_vertex[1] = ext0_vertex[1] - one;
+                        ext0_vertex[1] = ext0_vertex[1] - 1;
                         ext0_dpos[1] = ext0_dpos[1] + one;
                     }
                 } else {
                     // c_point is (0, 1, 0)
-                    ext0_vertex[1] = ext0_vertex[1] + one;
-                    ext1_vertex[1] = ext1_vertex[1] + one;
+                    ext0_vertex[1] = ext0_vertex[1] + 1;
+                    ext1_vertex[1] = ext1_vertex[1] + 1;
                     ext0_dpos[1] = ext0_dpos[1] - one;
                     ext1_dpos[1] = ext1_dpos[1] - one;
                 }
 
                 if c_point & 0x04 == 0 {
                     // c_point is either (1, 0, 0) or (0, 1, 0)
-                    ext1_vertex[2] = ext1_vertex[2] - one;
+                    ext1_vertex[2] = ext1_vertex[2] - 1;
                     ext1_dpos[2] = ext1_dpos[2] + one;
                 } else {
                     // c_point is (0, 0, 1)
-                    ext0_vertex[2] = ext0_vertex[2] + one;
-                    ext1_vertex[2] = ext1_vertex[2] + one;
+                    ext0_vertex[2] = ext0_vertex[2] + 1;
+                    ext1_vertex[2] = ext1_vertex[2] + 1;
                     ext0_dpos[2] = ext0_dpos[2] - one;
                     ext1_dpos[2] = ext1_dpos[2] - one;
                 }
@@ -389,39 +390,39 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
 
                 if c_point & 0x01 == 0 {
                     // Nearest points are (0, 1, 0) and (0, 0, 1)
-                    ext1_vertex[0] = ext1_vertex[0] - one;
+                    ext1_vertex[0] = ext1_vertex[0] - 1;
                     ext0_dpos[0] = ext0_dpos[0] - t0;
                     ext1_dpos[0] = ext1_dpos[0] + t2;
                 } else {
                     // (1, 0, 0) is a closest point
-                    ext0_vertex[0] = ext0_vertex[0] + one;
-                    ext1_vertex[0] = ext1_vertex[0] + one;
+                    ext0_vertex[0] = ext0_vertex[0] + 1;
+                    ext1_vertex[0] = ext1_vertex[0] + 1;
                     ext0_dpos[0] = ext0_dpos[0] - t1;
                     ext1_dpos[0] = ext1_dpos[0] - t3;
                 }
 
                 if c_point & 0x02 == 0 {
                     // Nearest points are (1, 0, 0) and (0, 0, 1)
-                    ext1_vertex[1] = ext1_vertex[1] - one;
+                    ext1_vertex[1] = ext1_vertex[1] - 1;
                     ext0_dpos[1] = ext0_dpos[1] - t0;
                     ext1_dpos[1] = ext1_dpos[1] + t2;
                 } else {
                     // (0, 1, 0) is a closest point
-                    ext0_vertex[1] = ext0_vertex[1] + one;
-                    ext1_vertex[1] = ext1_vertex[1] + one;
+                    ext0_vertex[1] = ext0_vertex[1] + 1;
+                    ext1_vertex[1] = ext1_vertex[1] + 1;
                     ext0_dpos[1] = ext0_dpos[1] - t1;
                     ext1_dpos[1] = ext1_dpos[1] - t3;
                 }
 
                 if c_point & 0x04 == 0 {
                     // Nearest points are (1, 0, 0) and (0, 1, 0)
-                    ext1_vertex[2] = ext1_vertex[2] - one;
+                    ext1_vertex[2] = ext1_vertex[2] - 1;
                     ext0_dpos[2] = ext0_dpos[2] - t0;
                     ext1_dpos[2] = ext1_dpos[2] + t2;
                 } else {
                     // (0, 0, 1) is a closest point
-                    ext0_vertex[2] = ext0_vertex[2] + one;
-                    ext1_vertex[2] = ext1_vertex[2] + one;
+                    ext0_vertex[2] = ext0_vertex[2] + 1;
+                    ext1_vertex[2] = ext1_vertex[2] + 1;
                     ext0_dpos[2] = ext0_dpos[2] - t1;
                     ext1_dpos[2] = ext1_dpos[2] - t3;
                 }
@@ -433,22 +434,22 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
             let t2 = t1 + squish_constant;
 
             // Contribution at (1, 1, 0)
-            vertex = math::add3(stretched_floor, [one, one, zero]);
+            vertex = math::add3(stretched_floor_i, [1, 1, 0]);
             dpos = math::sub3(pos0, [t1, t1, t0]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 0, 1)
-            vertex = math::add3(stretched_floor, [one, zero, one]);
+            vertex = math::add3(stretched_floor_i, [1, 0, 1]);
             dpos = math::sub3(pos0, [t1, t0, t1]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 1)
-            vertex = math::add3(stretched_floor, [zero, one, one]);
+            vertex = math::add3(stretched_floor_i, [0, 1, 1]);
             dpos = math::sub3(pos0, [t0, t1, t1]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 1, 1)
-            vertex = math::add3(stretched_floor, [one, one, one]);
+            vertex = math::add3(stretched_floor_i, [1, 1, 1]);
             dpos = math::sub3(pos0, [t2, t2, t2]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
@@ -484,8 +485,8 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
 
                 if c_point & 0x01 != 0 {
                     // c_point is either (1, 1, 0) or (1, 0, 1)
-                    ext0_vertex[0] = ext0_vertex[0] + two;
-                    ext1_vertex[0] = ext1_vertex[0] + one;
+                    ext0_vertex[0] = ext0_vertex[0] + 2;
+                    ext1_vertex[0] = ext1_vertex[0] + 1;
                     ext0_dpos[0] = ext0_dpos[0] - t2;
                     ext1_dpos[0] = ext1_dpos[0] - t1;
                 } else {
@@ -496,17 +497,17 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
 
                 if c_point & 0x02 != 0 {
                     // c_point is either (1, 1, 0) or (0, 1, 1)
-                    ext0_vertex[1] = ext0_vertex[1] + one;
-                    ext1_vertex[1] = ext1_vertex[1] + one;
+                    ext0_vertex[1] = ext0_vertex[1] + 1;
+                    ext1_vertex[1] = ext1_vertex[1] + 1;
                     ext0_dpos[1] = ext0_dpos[1] - t1;
                     ext1_dpos[1] = ext1_dpos[1] - t1;
                     if c_point & 0x01 != 0 {
                         // c_point is (1, 1, 0)
-                        ext1_vertex[1] = ext1_vertex[1] + one;
+                        ext1_vertex[1] = ext1_vertex[1] + 1;
                         ext1_dpos[1] = ext1_dpos[1] - one;
                     } else {
                         // c_point is (0, 1, 1)
-                        ext0_vertex[1] = ext0_vertex[1] + one;
+                        ext0_vertex[1] = ext0_vertex[1] + 1;
                         ext0_dpos[1] = ext0_dpos[1] - one;
                     }
                 } else {
@@ -517,8 +518,8 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
 
                 if c_point & 0x04 != 0 {
                     // c_point is either (1, 0, 1) or (0, 1, 1)
-                    ext0_vertex[2] = ext0_vertex[2] + one;
-                    ext1_vertex[2] = ext1_vertex[2] + two;
+                    ext0_vertex[2] = ext0_vertex[2] + 1;
+                    ext1_vertex[2] = ext1_vertex[2] + 2;
                     ext0_dpos[2] = ext0_dpos[2] - t1;
                     ext1_dpos[2] = ext1_dpos[2] - t2;
                 } else {
@@ -542,8 +543,8 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
 
                 if c_point & 0x01 != 0 {
                     // a, b are (1, 1, 0), (1, 0, 1)
-                    ext0_vertex[0] = ext0_vertex[0] + one;
-                    ext1_vertex[0] = ext1_vertex[0] + two;
+                    ext0_vertex[0] = ext0_vertex[0] + 1;
+                    ext1_vertex[0] = ext1_vertex[0] + 2;
                     ext0_dpos[0] = ext0_dpos[0] - t1;
                     ext1_dpos[0] = ext1_dpos[0] - t3;
                 } else {
@@ -553,8 +554,8 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
 
                 if c_point & 0x02 != 0 {
                     // a, b are (1, 1, 0), (0, 1, 1)
-                    ext0_vertex[1] = ext0_vertex[1] + one;
-                    ext1_vertex[1] = ext1_vertex[1] + two;
+                    ext0_vertex[1] = ext0_vertex[1] + 1;
+                    ext1_vertex[1] = ext1_vertex[1] + 2;
                     ext0_dpos[1] = ext0_dpos[1] - t1;
                     ext1_dpos[1] = ext1_dpos[1] - t3;
                 } else {
@@ -564,8 +565,8 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
 
                 if c_point & 0x04 != 0 {
                     // a, b are (1, 0, 1), (0, 1, 1)
-                    ext0_vertex[2] = ext0_vertex[2] + one;
-                    ext1_vertex[2] = ext1_vertex[2] + two;
+                    ext0_vertex[2] = ext0_vertex[2] + 1;
+                    ext1_vertex[2] = ext1_vertex[2] + 2;
                     ext0_dpos[2] = ext0_dpos[2] - t1;
                     ext1_dpos[2] = ext1_dpos[2] - t3;
                 } else {
@@ -581,32 +582,32 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
             let t3 = one + two * squish_constant;
 
             // Contribution at (1, 0, 0)
-            vertex = math::add3(stretched_floor, [one, zero, zero]);
+            vertex = math::add3(stretched_floor_i, [1, 0, 0]);
             dpos = math::sub3(pos0, [t1, t0, t0]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 0)
-            vertex = math::add3(stretched_floor, [zero, one, zero]);
+            vertex = math::add3(stretched_floor_i, [0, 1, 0]);
             dpos = math::sub3(pos0, [t0, t1, t0]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 0, 1)
-            vertex = math::add3(stretched_floor, [zero, zero, one]);
+            vertex = math::add3(stretched_floor_i, [0, 0, 1]);
             dpos = math::sub3(pos0, [t0, t0, t1]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 1, 0)
-            vertex = math::add3(stretched_floor, [one, one, zero]);
+            vertex = math::add3(stretched_floor_i, [1, 1, 0]);
             dpos = math::sub3(pos0, [t3, t3, t2]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 0, 1)
-            vertex = math::add3(stretched_floor, [one, zero, one]);
+            vertex = math::add3(stretched_floor_i, [1, 0, 1]);
             dpos = math::sub3(pos0, [t3, t2, t3]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 1)
-            vertex = math::add3(stretched_floor, [zero, one, one]);
+            vertex = math::add3(stretched_floor_i, [0, 1, 1]);
             dpos = math::sub3(pos0, [t2, t3, t3]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
@@ -682,9 +683,9 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
                     let t2 = one + squish_constant + t0;
 
                     // ext0 = (1, 1, 1)
-                    ext0_vertex[0] = ext0_vertex[0] + one;
-                    ext0_vertex[1] = ext0_vertex[1] + one;
-                    ext0_vertex[2] = ext0_vertex[2] + one;
+                    ext0_vertex[0] = ext0_vertex[0] + 1;
+                    ext0_vertex[1] = ext0_vertex[1] + 1;
+                    ext0_vertex[2] = ext0_vertex[2] + 1;
                     ext0_dpos[0] = ext0_dpos[0] - t2;
                     ext0_dpos[1] = ext0_dpos[1] - t2;
                     ext0_dpos[2] = ext0_dpos[2] - t2;
@@ -694,19 +695,19 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
 
                     if c_point & 0x01 != 0 {
                         // a and b share (1, 0, 0)
-                        ext1_vertex[0] = ext1_vertex[0] + two;
+                        ext1_vertex[0] = ext1_vertex[0] + 2;
                         ext1_dpos[0] = ext1_dpos[0] - t1;
                         ext1_dpos[1] = ext1_dpos[1] - t0;
                         ext1_dpos[2] = ext1_dpos[2] - t0;
                     } else if c_point & 0x02 != 0 {
                         // a and b share (0, 1, 0)
-                        ext1_vertex[1] = ext1_vertex[1] + two;
+                        ext1_vertex[1] = ext1_vertex[1] + 2;
                         ext1_dpos[0] = ext1_dpos[0] - t0;
                         ext1_dpos[1] = ext1_dpos[1] - t1;
                         ext1_dpos[2] = ext1_dpos[2] - t0;
                     } else {
                         // a and b share (0, 0, 1)
-                        ext1_vertex[2] = ext1_vertex[2] + two;
+                        ext1_vertex[2] = ext1_vertex[2] + 2;
                         ext1_dpos[0] = ext1_dpos[0] - t0;
                         ext1_dpos[1] = ext1_dpos[1] - t0;
                         ext1_dpos[2] = ext1_dpos[2] - t1;
@@ -727,25 +728,25 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
                     let c_point = a_point | b_point;
                     if c_point & 0x01 == 0 {
                         // a and b lack (1, 0, 0)
-                        ext1_vertex[0] = ext1_vertex[0] - one;
-                        ext1_vertex[1] = ext1_vertex[1] + one;
-                        ext1_vertex[2] = ext1_vertex[2] + one;
+                        ext1_vertex[0] = ext1_vertex[0] - 1;
+                        ext1_vertex[1] = ext1_vertex[1] + 1;
+                        ext1_vertex[2] = ext1_vertex[2] + 1;
                         ext1_dpos[0] = ext1_dpos[0] + t1;
                         ext1_dpos[1] = ext1_dpos[1] - t0;
                         ext1_dpos[2] = ext1_dpos[2] - t0;
                     } else if c_point & 0x02 == 0 {
                         // a and b lack (0, 1, 0)
-                        ext1_vertex[0] = ext1_vertex[0] + one;
-                        ext1_vertex[1] = ext1_vertex[1] - one;
-                        ext1_vertex[2] = ext1_vertex[2] + one;
+                        ext1_vertex[0] = ext1_vertex[0] + 1;
+                        ext1_vertex[1] = ext1_vertex[1] - 1;
+                        ext1_vertex[2] = ext1_vertex[2] + 1;
                         ext1_dpos[0] = ext1_dpos[0] - t0;
                         ext1_dpos[1] = ext1_dpos[1] + t1;
                         ext1_dpos[2] = ext1_dpos[2] - t0;
                     } else {
                         // a and b lack (0, 0, 1)
-                        ext1_vertex[0] = ext1_vertex[0] + one;
-                        ext1_vertex[1] = ext1_vertex[1] + one;
-                        ext1_vertex[2] = ext1_vertex[2] - one;
+                        ext1_vertex[0] = ext1_vertex[0] + 1;
+                        ext1_vertex[1] = ext1_vertex[1] + 1;
+                        ext1_vertex[2] = ext1_vertex[2] - 1;
                         ext1_dpos[0] = ext1_dpos[0] - t0;
                         ext1_dpos[1] = ext1_dpos[1] - t0;
                         ext1_dpos[2] = ext1_dpos[2] + t1;
@@ -777,23 +778,23 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
 
                 // ext0 is (-1, 1, 1), (1, -1, 1), or (1, 1, -1)
                 if c_point0 & 0x01 == 0 {
-                    ext0_vertex[0] = ext0_vertex[0] - one;
-                    ext0_vertex[1] = ext0_vertex[1] + one;
-                    ext0_vertex[2] = ext0_vertex[2] + one;
+                    ext0_vertex[0] = ext0_vertex[0] - 1;
+                    ext0_vertex[1] = ext0_vertex[1] + 1;
+                    ext0_vertex[2] = ext0_vertex[2] + 1;
                     ext0_dpos[0] = ext0_dpos[0] + t1;
                     ext0_dpos[1] = ext0_dpos[1] - t0;
                     ext0_dpos[2] = ext0_dpos[2] - t0;
                 } else if c_point0 & 0x02 == 0 {
-                    ext0_vertex[0] = ext0_vertex[0] + one;
-                    ext0_vertex[1] = ext0_vertex[1] - one;
-                    ext0_vertex[2] = ext0_vertex[2] + one;
+                    ext0_vertex[0] = ext0_vertex[0] + 1;
+                    ext0_vertex[1] = ext0_vertex[1] - 1;
+                    ext0_vertex[2] = ext0_vertex[2] + 1;
                     ext0_dpos[0] = ext0_dpos[0] - t0;
                     ext0_dpos[1] = ext0_dpos[1] + t1;
                     ext0_dpos[2] = ext0_dpos[2] - t0;
                 } else {
-                    ext0_vertex[0] = ext0_vertex[0] + one;
-                    ext0_vertex[1] = ext0_vertex[1] + one;
-                    ext0_vertex[2] = ext0_vertex[2] - one;
+                    ext0_vertex[0] = ext0_vertex[0] + 1;
+                    ext0_vertex[1] = ext0_vertex[1] + 1;
+                    ext0_vertex[2] = ext0_vertex[2] - 1;
                     ext0_dpos[0] = ext0_dpos[0] - t0;
                     ext0_dpos[1] = ext0_dpos[1] - t0;
                     ext0_dpos[2] = ext0_dpos[2] + t1;
@@ -804,13 +805,13 @@ impl<T: Float> NoiseModule<Point3<T>> for OpenSimplex {
                 ext1_dpos[1] = ext1_dpos[1] - t2;
                 ext1_dpos[2] = ext1_dpos[2] - t2;
                 if c_point1 & 0x01 != 0 {
-                    ext1_vertex[0] = ext1_vertex[0] + two;
+                    ext1_vertex[0] = ext1_vertex[0] + 2;
                     ext1_dpos[0] = ext1_dpos[0] - two;
                 } else if c_point1 & 0x02 != 0 {
-                    ext1_vertex[1] = ext1_vertex[1] + two;
+                    ext1_vertex[1] = ext1_vertex[1] + 2;
                     ext1_dpos[1] = ext1_dpos[1] - two;
                 } else {
-                    ext1_vertex[2] = ext1_vertex[2] + two;
+                    ext1_vertex[2] = ext1_vertex[2] + 2;
                     ext1_dpos[2] = ext1_dpos[2] - two;
                 }
             }
