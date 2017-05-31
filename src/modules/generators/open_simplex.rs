@@ -933,6 +933,7 @@ impl<T: Float> NoiseModule<Point4<T>> for OpenSimplex {
             // (0, 0, 0, 1) => ext0 = (-1, 0, 0, 1), ext1 = (0, -1, 0, 1), ext2 = (0, 0, -1, 1)
         } else if region_sum >= three {
             // We're inside the pentachoron (4-Simplex) at (1, 1, 1, 1)
+
             let t0 = squish_constant + squish_constant + squish_constant;
             let t1 = one + t0;
             let t2 = t1 + squish_constant;
@@ -964,182 +965,117 @@ impl<T: Float> NoiseModule<Point4<T>> for OpenSimplex {
         } else if region_sum <= two {
             // We're inside the first dispentachoron (Rectified 4-Simplex)
 
+            let t0 = squish_constant;
+            let t1 = t0 + one;
+            let t2 = t0 + squish_constant;
+            let t3 = t2 + one;
+
             // Contribution at (1, 0, 0, 0)
-            let pos1;
-            {
-                let vertex = math::add4(stretched_floor, [one, zero, zero, zero]);
-                pos1 = math::sub4(pos0,
-                                  [one + squish_constant,
-                                   squish_constant,
-                                   squish_constant,
-                                   squish_constant]);
-                value = value + gradient(&self.perm_table, vertex, pos1);
-            }
+            vertex = math::add4(stretched_floor, [one, zero, zero, zero]);
+            dpos = math::sub4(pos0, [t1, t0, t0, t0]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 0, 0)
-            let pos2;
-            {
-                let vertex = math::add4(stretched_floor, [zero, one, zero, zero]);
-                pos2 = [pos1[0] + one, pos1[1] - one, pos1[2], pos1[3]];
-                value = value + gradient(&self.perm_table, vertex, pos2);
-            }
+            vertex = math::add4(stretched_floor, [zero, one, zero, zero]);
+            dpos = math::sub4(pos0, [t0, t1, t0, t0]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 0, 1, 0)
-            let pos3;
-            {
-                let vertex = math::add4(stretched_floor, [zero, zero, one, zero]);
-                pos3 = [pos2[0], pos1[1], pos1[2] - one, pos1[3]];
-                value = value + gradient(&self.perm_table, vertex, pos3);
-            }
+            vertex = math::add4(stretched_floor, [zero, zero, one, zero]);
+            dpos = math::sub4(pos0, [t0, t0, t1, t0]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 0, 0, 1)
-            let pos4;
-            {
-                let vertex = math::add4(stretched_floor, [zero, zero, zero, one]);
-                pos4 = [pos2[0], pos1[1], pos1[2], pos1[3] - one];
-                value = value + gradient(&self.perm_table, vertex, pos4);
-            }
+            vertex = math::add4(stretched_floor, [zero, zero, zero, one]);
+            dpos = math::sub4(pos0, [t0, t0, t0, t1]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 1, 0, 0)
-            let pos5;
-            {
-                let vertex = math::add4(stretched_floor, [one, one, zero, zero]);
-                pos5 = [pos1[0] - squish_constant,
-                        pos2[1] - squish_constant,
-                        pos1[2] - squish_constant,
-                        pos1[3] - squish_constant];
-                value = value + gradient(&self.perm_table, vertex, pos5);
-            }
+            vertex = math::add4(stretched_floor, [one, one, zero, zero]);
+            dpos = math::sub4(pos0, [t3, t3, t2, t2]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 0, 1, 0)
-            let pos6;
-            {
-                let vertex = math::add4(stretched_floor, [one, zero, one, zero]);
-                pos6 = [pos5[0], pos5[1] + one, pos5[2] - one, pos5[3]];
-                value = value + gradient(&self.perm_table, vertex, pos6);
-            }
+            vertex = math::add4(stretched_floor, [one, zero, one, zero]);
+            dpos = math::sub4(pos0, [t3, t2, t3, t2]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 0, 0, 1)
-            let pos7;
-            {
-                let vertex = math::add4(stretched_floor, [one, zero, zero, one]);
-                pos7 = [pos5[0], pos6[1], pos5[2], pos5[3] - one];
-                value = value + gradient(&self.perm_table, vertex, pos7);
-            }
+            vertex = math::add4(stretched_floor, [one, zero, zero, one]);
+            dpos = math::sub4(pos0, [t3, t2, t2, t3]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 1, 0)
-            let pos8;
-            {
-                let vertex = math::add4(stretched_floor, [zero, one, one, zero]);
-                pos8 = [pos5[0] + one, pos5[1], pos6[2], pos5[3]];
-                value = value + gradient(&self.perm_table, vertex, pos8);
-            }
+            vertex = math::add4(stretched_floor, [zero, one, one, zero]);
+            dpos = math::sub4(pos0, [t2, t3, t3, t2]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 0, 1)
-            let pos9;
-            {
-                let vertex = math::add4(stretched_floor, [zero, one, zero, one]);
-                pos9 = [pos8[0], pos5[1], pos5[2], pos7[3]];
-                value = value + gradient(&self.perm_table, vertex, pos9);
-            }
+            vertex = math::add4(stretched_floor, [zero, one, zero, one]);
+            dpos = math::sub4(pos0, [t2, t3, t2, t3]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 0, 1, 1)
-            let pos10;
-            {
-                let vertex = math::add4(stretched_floor, [zero, zero, one, one]);
-                pos10 = [pos8[0], pos6[1], pos6[2], pos7[3]];
-                value = value + gradient(&self.perm_table, vertex, pos10);
-            }
+            vertex = math::add4(stretched_floor, [zero, zero, one, one]);
+            dpos = math::sub4(pos0, [t2, t2, t3, t3]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
         } else {
             // We're inside the second dispentachoron (Rectified 4-Simplex)
-            let squish_constant_3 = three * squish_constant;
+
+            let t0 = squish_constant + squish_constant;
+            let t1 = t0 + one;
+            let t2 = t0 + squish_constant;
+            let t3 = t2 + one;
 
             // Contribution at (1, 1, 1, 0)
-            let pos4;
-            {
-                let vertex = math::add4(stretched_floor, [one, one, one, zero]);
-                pos4 = math::sub4(pos0,
-                                  [one + squish_constant_3,
-                                   one + squish_constant_3,
-                                   one + squish_constant_3,
-                                   squish_constant_3]);
-                value = value + gradient(&self.perm_table, vertex, pos4);
-            }
+            vertex = math::add4(stretched_floor, [one, one, one, zero]);
+            dpos = math::sub4(pos0, [t3, t3, t3, t2]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 1, 0, 1)
-            let pos3;
-            {
-                let vertex = math::add4(stretched_floor, [one, one, zero, one]);
-                pos3 = [pos4[0], pos4[1], pos4[2] + one, pos4[3] - one];
-                value = value + gradient(&self.perm_table, vertex, pos3);
-            }
+            vertex = math::add4(stretched_floor, [one, one, zero, one]);
+            dpos = math::sub4(pos0, [t3, t3, t2, t3]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 0, 1, 1)
-            let pos2;
-            {
-                let vertex = math::add4(stretched_floor, [one, zero, one, one]);
-                pos2 = [pos4[0], pos4[1] + one, pos4[2], pos3[3]];
-                value = value + gradient(&self.perm_table, vertex, pos2);
-            }
+            vertex = math::add4(stretched_floor, [one, zero, one, one]);
+            dpos = math::sub4(pos0, [t3, t2, t3, t3]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 1, 1)
-            let pos1;
-            {
-                let vertex = math::add4(stretched_floor, [zero, one, one, one]);
-                pos1 = [pos4[0] + one, pos4[1], pos4[2], pos3[3]];
-                value = value + gradient(&self.perm_table, vertex, pos1);
-            }
+            vertex = math::add4(stretched_floor, [zero, one, one, one]);
+            dpos = math::sub4(pos0, [t2, t3, t3, t3]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 1, 0, 0)
-            let pos5;
-            {
-                let vertex = math::add4(stretched_floor, [one, one, zero, zero]);
-                pos5 = [pos4[0] + squish_constant,
-                        pos4[1] + squish_constant,
-                        pos3[2] + squish_constant,
-                        pos4[3] + squish_constant];
-                value = value + gradient(&self.perm_table, vertex, pos5);
-            }
+            vertex = math::add4(stretched_floor, [one, one, zero, zero]);
+            dpos = math::sub4(pos0, [t1, t1, t0, t0]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 0, 1, 0)
-            let pos6;
-            {
-                let vertex = math::add4(stretched_floor, [one, zero, one, zero]);
-                pos6 = [pos5[0], pos5[1] + one, pos5[2] - one, pos5[3]];
-                value = value + gradient(&self.perm_table, vertex, pos6);
-            }
+            vertex = math::add4(stretched_floor, [one, zero, one, zero]);
+            dpos = math::sub4(pos0, [t1, t0, t1, t0]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 0, 0, 1)
-            let pos7;
-            {
-                let vertex = math::add4(stretched_floor, [one, zero, zero, one]);
-                pos7 = [pos5[0], pos6[1], pos5[2], pos5[3] - one];
-                value = value + gradient(&self.perm_table, vertex, pos7);
-            }
+            vertex = math::add4(stretched_floor, [one, zero, zero, one]);
+            dpos = math::sub4(pos0, [t1, t0, t0, t1]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 1, 0)
-            let pos8;
-            {
-                let vertex = math::add4(stretched_floor, [zero, one, one, zero]);
-                pos8 = [pos5[0] + one, pos5[1], pos6[2], pos5[3]];
-                value = value + gradient(&self.perm_table, vertex, pos8);
-            }
+            vertex = math::add4(stretched_floor, [zero, one, one, zero]);
+            dpos = math::sub4(pos0, [t0, t1, t1, t0]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 0, 1)
-            let pos9;
-            {
-                let vertex = math::add4(stretched_floor, [zero, one, zero, one]);
-                pos9 = [pos8[0], pos5[1], pos5[2], pos7[3]];
-                value = value + gradient(&self.perm_table, vertex, pos9);
-            }
+            vertex = math::add4(stretched_floor, [zero, one, zero, one]);
+            dpos = math::sub4(pos0, [t0, t1, t0, t1]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 0, 1, 1)
-            let pos10;
-            {
-                let vertex = math::add4(stretched_floor, [zero, zero, one, one]);
-                pos10 = [pos8[0], pos6[1], pos6[2], pos7[3]];
-                value = value + gradient(&self.perm_table, vertex, pos10);
-            }
+            vertex = math::add4(stretched_floor, [zero, zero, one, one]);
+            dpos = math::sub4(pos0, [t0, t0, t1, t1]);
+            value = value + gradient(&self.perm_table, vertex, dpos);
         }
 
         value * math::cast(NORM_CONSTANT_4D)
