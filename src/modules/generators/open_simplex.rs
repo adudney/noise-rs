@@ -23,7 +23,7 @@ const SQUISH_CONSTANT_3D: f64 = 1.0 / 3.0; //(Math.sqrt(3+1)-1)/3;
 const STRETCH_CONSTANT_4D: f64 = -0.138196601125011; //(Math.sqrt(4+1)-1)/4;
 const SQUISH_CONSTANT_4D: f64 = 0.309016994374947; //(Math.sqrt(4+1)-1)/4;
 
-const NORM_CONSTANT_2D: f32 = 1.0 / 14.0;
+const NORM_CONSTANT_2D: f32 = 1.0 / 7.615687423143449;
 const NORM_CONSTANT_3D: f32 = 1.0 / 14.0;
 const NORM_CONSTANT_4D: f32 = 1.0 / 6.8699090070956625;
 
@@ -69,13 +69,13 @@ impl<T: Float> NoiseModule<Point2<T>> for OpenSimplex {
     fn get(&self, point: Point2<T>) -> T {
         #[inline(always)]
         fn gradient<T: Float>(perm_table: &PermutationTable,
-                              vertex: math::Point2<T>,
+                              vertex: math::Point2<isize>,
                               pos: math::Point2<T>)
                               -> T {
             let zero = T::zero();
             let attn = math::cast::<_, T>(2.0_f64) - math::dot2(pos, pos);
             if attn > zero {
-                let index = perm_table.get2::<isize>(math::cast2::<_, isize>(vertex));
+                let index = perm_table.get2::<isize>(vertex);
                 let vec = gradient::get2::<T>(index);
                 math::pow4(attn) * math::dot2(pos, vec)
             } else {
@@ -85,7 +85,7 @@ impl<T: Float> NoiseModule<Point2<T>> for OpenSimplex {
 
         let zero = T::zero();
         let one = T::one();
-        let two = math::cast(2.0);
+        let two: T = math::cast(2.0);
         let stretch_constant: T = math::cast(STRETCH_CONSTANT_2D);
         let squish_constant: T = math::cast(SQUISH_CONSTANT_2D);
 
@@ -95,6 +95,7 @@ impl<T: Float> NoiseModule<Point2<T>> for OpenSimplex {
 
         // Floor to get grid coordinates of rhombus (stretched square) cell origin.
         let stretched_floor = math::map2(stretched, Float::floor);
+        let stretched_floor_i = math::cast2::<_, isize>(stretched_floor);
 
         // Skew out to get actual coordinates of rhombus origin. We'll need these later.
         let squish_offset = math::fold2(stretched_floor, Add::add) * squish_constant;
@@ -121,12 +122,12 @@ impl<T: Float> NoiseModule<Point2<T>> for OpenSimplex {
         let t4 = one + t2;
 
         // Contribution (1, 0)
-        vertex = math::add2(stretched_floor, [one, zero]);
+        vertex = math::add2(stretched_floor_i, [1, 0]);
         dpos = math::sub2(pos0, [t1, t0]);
         value = value + gradient(&self.perm_table, vertex, dpos);
 
         // Contribution (0, 1)
-        vertex = math::add2(stretched_floor, [zero, one]);
+        vertex = math::add2(stretched_floor_i, [0, 1]);
         dpos = math::sub2(pos0, [t0, t1]);
         value = value + gradient(&self.perm_table, vertex, dpos);
 
@@ -152,7 +153,7 @@ impl<T: Float> NoiseModule<Point2<T>> for OpenSimplex {
         if region_sum < one {
             // In region A
             // Contribution (0, 0)
-            vertex = math::add2(stretched_floor, [zero, zero]);
+            vertex = math::add2(stretched_floor_i, [0, 0]);
             dpos = math::sub2(pos0, [zero, zero]);
 
             // Surflet radius is larger than one simplex, add contribution from extra vertex
@@ -162,24 +163,24 @@ impl<T: Float> NoiseModule<Point2<T>> for OpenSimplex {
                 if rel_coords[0] > rel_coords[1] {
                     // Nearest contributing surflets are from region D
                     // Contribution (1, -1)
-                    ext_vertex = math::add2(stretched_floor, [one, -one]);
+                    ext_vertex = math::add2(stretched_floor_i, [1, -1]);
                     ext_dpos = math::sub2(pos0, [one, -one]);
                 } else {
                     // Nearest contributing surflets are from region E
                     // Contribution (-1, 1)
-                    ext_vertex = math::add2(stretched_floor, [-one, one]);
+                    ext_vertex = math::add2(stretched_floor_i, [-1, 1]);
                     ext_dpos = math::sub2(pos0, [-one, one]);
                 }
             } else {
                 // Nearest contributing surflets are from region B
                 // Contribution (1, 1)
-                ext_vertex = math::add2(stretched_floor, [one, one]);
+                ext_vertex = math::add2(stretched_floor_i, [1, 1]);
                 ext_dpos = math::sub2(pos0, [t2, t2]);
             }
         } else {
             // In region B
             // Contribution (1, 1)
-            vertex = math::add2(stretched_floor, [one, one]);
+            vertex = math::add2(stretched_floor_i, [1, 1]);
             // We are moving across the diagonal `/`, so we'll need to add by the
             // squish constant
             dpos = math::sub2(pos0, [t2, t2]);
@@ -191,18 +192,18 @@ impl<T: Float> NoiseModule<Point2<T>> for OpenSimplex {
                 if rel_coords[0] > rel_coords[1] {
                     // Nearest contributing surflets are from region C
                     // Contribution (2, 0)
-                    ext_vertex = math::add2(stretched_floor, [two, zero]);
+                    ext_vertex = math::add2(stretched_floor_i, [2, 0]);
                     ext_dpos = math::sub2(pos0, [t4, t3]);
                 } else {
                     // Nearest contributing surflets are from region F
                     // Contribution (0, 2)
-                    ext_vertex = math::add2(stretched_floor, [zero, two]);
+                    ext_vertex = math::add2(stretched_floor_i, [0, 2]);
                     ext_dpos = math::sub2(pos0, [t3, t4]);
                 }
             } else {
                 // Nearest contributing surflets are from region A
                 // Contribution (0, 0)
-                ext_vertex = math::add2(stretched_floor, [zero, zero]);
+                ext_vertex = math::add2(stretched_floor_i, [0, 0]);
                 ext_dpos = math::sub2(pos0, [zero, zero]);
             }
         }
