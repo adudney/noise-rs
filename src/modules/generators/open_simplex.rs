@@ -836,13 +836,13 @@ impl<T: Float> NoiseModule<Point4<T>> for OpenSimplex {
     fn get(&self, point: Point4<T>) -> T {
         #[inline(always)]
         fn gradient<T: Float>(perm_table: &PermutationTable,
-                              vertex: math::Point4<T>,
+                              vertex: math::Point4<isize>,
                               pos: math::Point4<T>)
                               -> T {
             let zero = T::zero();
             let attn = math::cast::<_, T>(2.0_f64) - math::dot4(pos, pos);
             if attn > zero {
-                let index = perm_table.get4::<isize>(math::cast4::<_, isize>(vertex));
+                let index = perm_table.get4::<isize>(vertex);
                 let vec = gradient::get4::<T>(index);
                 math::pow4(attn) * math::dot4(pos, vec)
             } else {
@@ -865,6 +865,7 @@ impl<T: Float> NoiseModule<Point4<T>> for OpenSimplex {
         // Floor to get simplectic honeycomb coordinates of rhombo-hypercube
         // super-cell origin.
         let stretched_floor = math::map4(stretched, Float::floor);
+        let stretched_floor_i = math::cast4::<_, isize>(stretched_floor);
 
         // Skew out to get actual coordinates of stretched rhombo-hypercube origin.
         // We'll need these later.
@@ -901,27 +902,27 @@ impl<T: Float> NoiseModule<Point4<T>> for OpenSimplex {
             let t1 = one + squish_constant;
 
             // Contribution at (0, 0, 0, 0)
-            vertex = math::add4(stretched_floor, [zero, zero, zero, zero]);
+            vertex = math::add4(stretched_floor_i, [0, 0, 0, 0]);
             dpos = math::sub4(pos0, [zero, zero, zero, zero]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 0, 0, 0)
-            vertex = math::add4(stretched_floor, [one, zero, zero, zero]);
+            vertex = math::add4(stretched_floor_i, [1, 0, 0, 0]);
             dpos = math::sub4(pos0, [t1, t0, t0, t0]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 0, 0)
-            vertex = math::add4(stretched_floor, [zero, one, zero, zero]);
+            vertex = math::add4(stretched_floor_i, [0, 1, 0, 0]);
             dpos = math::sub4(pos0, [t0, t1, t0, t0]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 0, 1, 0)
-            vertex = math::add4(stretched_floor, [zero, zero, one, zero]);
+            vertex = math::add4(stretched_floor_i, [0, 0, 1, 0]);
             dpos = math::sub4(pos0, [t0, t0, t1, t0]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 0, 0, 1)
-            vertex = math::add4(stretched_floor, [zero, zero, zero, one]);
+            vertex = math::add4(stretched_floor_i, [0, 0, 0, 1]);
             dpos = math::sub4(pos0, [t0, t0, t0, t1]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
@@ -939,27 +940,27 @@ impl<T: Float> NoiseModule<Point4<T>> for OpenSimplex {
             let t2 = t1 + squish_constant;
 
             // Contribution at (1, 1, 1, 0)
-            vertex = math::add4(stretched_floor, [one, one, one, zero]);
+            vertex = math::add4(stretched_floor_i, [1, 1, 1, 0]);
             dpos = math::sub4(pos0, [t1, t1, t1, t0]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 1, 0, 1)
-            vertex = math::add4(stretched_floor, [one, one, zero, one]);
+            vertex = math::add4(stretched_floor_i, [1, 1, 0, 1]);
             dpos = math::sub4(pos0, [t1, t1, t0, t1]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 0, 1, 1)
-            vertex = math::add4(stretched_floor, [one, zero, one, one]);
+            vertex = math::add4(stretched_floor_i, [1, 0, 1, 1]);
             dpos = math::sub4(pos0, [t1, t0, t1, t1]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 1, 1)
-            vertex = math::add4(stretched_floor, [zero, one, one, one]);
+            vertex = math::add4(stretched_floor_i, [0, 1, 1, 1]);
             dpos = math::sub4(pos0, [t0, t1, t1, t1]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 1, 1, 1)
-            vertex = math::add4(stretched_floor, [one, one, one, one]);
+            vertex = math::add4(stretched_floor_i, [1, 1, 1, 1]);
             dpos = math::sub4(pos0, [t2, t2, t2, t2]);
             value = value + gradient(&self.perm_table, vertex, dpos);
         } else if region_sum <= two {
@@ -971,52 +972,52 @@ impl<T: Float> NoiseModule<Point4<T>> for OpenSimplex {
             let t3 = t2 + one;
 
             // Contribution at (1, 0, 0, 0)
-            vertex = math::add4(stretched_floor, [one, zero, zero, zero]);
+            vertex = math::add4(stretched_floor_i, [1, 0, 0, 0]);
             dpos = math::sub4(pos0, [t1, t0, t0, t0]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 0, 0)
-            vertex = math::add4(stretched_floor, [zero, one, zero, zero]);
+            vertex = math::add4(stretched_floor_i, [0, 1, 0, 0]);
             dpos = math::sub4(pos0, [t0, t1, t0, t0]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 0, 1, 0)
-            vertex = math::add4(stretched_floor, [zero, zero, one, zero]);
+            vertex = math::add4(stretched_floor_i, [0, 0, 1, 0]);
             dpos = math::sub4(pos0, [t0, t0, t1, t0]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 0, 0, 1)
-            vertex = math::add4(stretched_floor, [zero, zero, zero, one]);
+            vertex = math::add4(stretched_floor_i, [0, 0, 0, 1]);
             dpos = math::sub4(pos0, [t0, t0, t0, t1]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 1, 0, 0)
-            vertex = math::add4(stretched_floor, [one, one, zero, zero]);
+            vertex = math::add4(stretched_floor_i, [1, 1, 0, 0]);
             dpos = math::sub4(pos0, [t3, t3, t2, t2]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 0, 1, 0)
-            vertex = math::add4(stretched_floor, [one, zero, one, zero]);
+            vertex = math::add4(stretched_floor_i, [1, 0, 1, 0]);
             dpos = math::sub4(pos0, [t3, t2, t3, t2]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 0, 0, 1)
-            vertex = math::add4(stretched_floor, [one, zero, zero, one]);
+            vertex = math::add4(stretched_floor_i, [1, 0, 0, 1]);
             dpos = math::sub4(pos0, [t3, t2, t2, t3]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 1, 0)
-            vertex = math::add4(stretched_floor, [zero, one, one, zero]);
+            vertex = math::add4(stretched_floor_i, [0, 1, 1, 0]);
             dpos = math::sub4(pos0, [t2, t3, t3, t2]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 0, 1)
-            vertex = math::add4(stretched_floor, [zero, one, zero, one]);
+            vertex = math::add4(stretched_floor_i, [0, 1, 0, 1]);
             dpos = math::sub4(pos0, [t2, t3, t2, t3]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 0, 1, 1)
-            vertex = math::add4(stretched_floor, [zero, zero, one, one]);
+            vertex = math::add4(stretched_floor_i, [0, 0, 1, 1]);
             dpos = math::sub4(pos0, [t2, t2, t3, t3]);
             value = value + gradient(&self.perm_table, vertex, dpos);
         } else {
@@ -1028,52 +1029,52 @@ impl<T: Float> NoiseModule<Point4<T>> for OpenSimplex {
             let t3 = t2 + one;
 
             // Contribution at (1, 1, 1, 0)
-            vertex = math::add4(stretched_floor, [one, one, one, zero]);
+            vertex = math::add4(stretched_floor_i, [1, 1, 1, 0]);
             dpos = math::sub4(pos0, [t3, t3, t3, t2]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 1, 0, 1)
-            vertex = math::add4(stretched_floor, [one, one, zero, one]);
+            vertex = math::add4(stretched_floor_i, [1, 1, 0, 1]);
             dpos = math::sub4(pos0, [t3, t3, t2, t3]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 0, 1, 1)
-            vertex = math::add4(stretched_floor, [one, zero, one, one]);
+            vertex = math::add4(stretched_floor_i, [1, 0, 1, 1]);
             dpos = math::sub4(pos0, [t3, t2, t3, t3]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 1, 1)
-            vertex = math::add4(stretched_floor, [zero, one, one, one]);
+            vertex = math::add4(stretched_floor_i, [0, 1, 1, 1]);
             dpos = math::sub4(pos0, [t2, t3, t3, t3]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 1, 0, 0)
-            vertex = math::add4(stretched_floor, [one, one, zero, zero]);
+            vertex = math::add4(stretched_floor_i, [1, 1, 0, 0]);
             dpos = math::sub4(pos0, [t1, t1, t0, t0]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 0, 1, 0)
-            vertex = math::add4(stretched_floor, [one, zero, one, zero]);
+            vertex = math::add4(stretched_floor_i, [1, 0, 1, 0]);
             dpos = math::sub4(pos0, [t1, t0, t1, t0]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (1, 0, 0, 1)
-            vertex = math::add4(stretched_floor, [one, zero, zero, one]);
+            vertex = math::add4(stretched_floor_i, [1, 0, 0, 1]);
             dpos = math::sub4(pos0, [t1, t0, t0, t1]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 1, 0)
-            vertex = math::add4(stretched_floor, [zero, one, one, zero]);
+            vertex = math::add4(stretched_floor_i, [0, 1, 1, 0]);
             dpos = math::sub4(pos0, [t0, t1, t1, t0]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 1, 0, 1)
-            vertex = math::add4(stretched_floor, [zero, one, zero, one]);
+            vertex = math::add4(stretched_floor_i, [0, 1, 0, 1]);
             dpos = math::sub4(pos0, [t0, t1, t0, t1]);
             value = value + gradient(&self.perm_table, vertex, dpos);
 
             // Contribution at (0, 0, 1, 1)
-            vertex = math::add4(stretched_floor, [zero, zero, one, one]);
+            vertex = math::add4(stretched_floor_i, [0, 0, 1, 1]);
             dpos = math::sub4(pos0, [t0, t0, t1, t1]);
             value = value + gradient(&self.perm_table, vertex, dpos);
         }
